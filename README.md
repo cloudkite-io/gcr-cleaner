@@ -20,11 +20,12 @@ The tool then lists all the images marked for deletion and prompts the user befo
 | OMIT_TAGS_REGEX         | Images with tags matching this Regex string will not be deleted | No |
 
 #### Example
-export REGISTRY="gcr.io"  
-export PROJECT_ID="project_id"  
-export AGE_DAYS="14"  
-export KUBERNETES_CONTEXTS="ktx_context"  
-export OMIT_IMAGES_REGEX="(image_name|image_sha)"  
-export OMIT_TAGS_REGEX="(latest|prod)"  
+The environment variables are declared in an ............
+REGISTRY=gcr.io  
+PROJECT_ID=project_id  
+AGE_DAYS=14  
+KUBERNETES_CONTEXTS=ktx_context  
+OMIT_IMAGES_REGEX=(image_name|image_sha)  
+OMIT_TAGS_REGEX=(latest|prod)  
 
 A sample.env file is provided in the root folder to be used as a template for the environment variables.
