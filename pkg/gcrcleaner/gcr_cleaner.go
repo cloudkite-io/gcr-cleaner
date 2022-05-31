@@ -35,6 +35,12 @@ type GCRCleaner struct {
 	log         *logrus.Logger
 }
 
+type manifestStruct struct {
+	Repo   string
+	Digest string
+	Info   google.ManifestInfo
+}
+
 // ensures required env variables are set and adds auth
 func (gcrcleaner *GCRCleaner) InitializeConfig() {
 	gcrcleaner.Config = config.AppConfig()
@@ -161,12 +167,6 @@ func (gcrcleaner *GCRCleaner) deleteOne(ctx context.Context, ref gcr.Reference) 
 	}
 
 	return nil
-}
-
-type manifestStruct struct {
-	Repo   string
-	Digest string
-	Info   google.ManifestInfo
 }
 
 func (gcrcleaner *GCRCleaner) Delete(ctx context.Context, imagesToDelete []*manifestStruct) {
