@@ -19,18 +19,6 @@ func (gcrcleaner *GCRCleaner) GetKubeConfig() {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.Parse()
-
-	// use the current context in kubeconfig
-	// config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	// create the clientset
-	// clientset, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
 	gcrcleaner.KubeConfig = *kubeconfig
 
 }
