@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-
 	"github.com/joeshaw/envdecode"
 )
 
@@ -26,11 +25,11 @@ func AppConfig() *Conf {
 	}
 	// if regexes are not passed ensure that an impossible match is set
 	if cfg.CleanerConf.OMIT_IMAGES_REGEX == "" {
-		cfg.CleanerConf.OMIT_IMAGES_REGEX = "'a^'"
+		cfg.CleanerConf.OMIT_IMAGES_REGEX = "a^"
 	}
 
 	if cfg.CleanerConf.OMIT_TAGS_REGEX == "" {
-		cfg.CleanerConf.OMIT_TAGS_REGEX = "'a^'"
+		cfg.CleanerConf.OMIT_TAGS_REGEX = "a^"
 	}
 
 	log.Println("Required envs loaded successfully")
