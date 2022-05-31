@@ -2,9 +2,11 @@ package gcrcleaner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -142,29 +144,96 @@ func (gcrcleaner *GCRCleaner) deleteOne(ctx context.Context, ref gcr.Reference) 
 	return nil
 }
 
-func (gcrcleaner *GCRCleaner) Delete(ctx context.Context)(imagesToDelete ) {
-	var deleted = make([]string, 0, len(tags.Manifests))
+type manifestStruct struct {
+	Repo   string
+	Digest string
+	Info   gcrgoogle.ManifestInfo
+}
+
+func (gcrcleaner *GCRCleaner) Delete(ctx context.Context, imagesToDelete manifestStruct) {
+	// Create a worker pool for parallel deletion
+	pool := workerpool.New(c.concurrency)
+
+	var deleted = make([]string, 0, len(imagesToDelete))
 	var deletedLock sync.Mutex
 	var errs = make(map[string]error)
 	var errsLock sync.RWMutex
+	for _, imageToDelete := range imagesToDelete {
+		for _, tag := range imageToDelete.Info.Tags {
+			c.logger.Debug("deleting tag",
+				"repo", imageToDelete.Repo,
+				"digest", imageToDelete.Digest,
+				"tag", tag)
 
-	for _, tag := range m.Info.Tags {
-		c.logger.Debug("deleting tag",
-			"repo", repo,
-			"digest", m.Digest,
-			"tag", tag)
-
-		tagged := gcrrepo.Tag(tag)
-		if !dryRun {
-			if err := c.deleteOne(ctx, tagged); err != nil {
-				return nil, fmt.Errorf("failed to delete %s: %w", tagged, err)
+			tagged := gcrrepo.Tag(tag)
+			if !dryRun {
+				if err := gcrcleaner.deleteOne(ctx, tagged); err != nil {
+					return nil, fmt.Errorf("failed to delete %s: %w", tagged, err)
+				}
 			}
+
+			deletedLock.Lock()
+			deleted = append(deleted, tagged.Identifier())
+			deletedLock.Unlock()
 		}
 
-		deletedLock.Lock()
-		deleted = append(deleted, tagged.Identifier())
-		deletedLock.Unlock()
+		digest := imageToDelete.Digest
+		ref := gcrrepo.Digest(digest)
+		pool.Submit(func() {
+			// Do not process if previous invocations failed. This prevents a large
+			// build-up of failed requests and rate limit exceeding (e.g. bad auth).
+			errsLock.RLock()
+			if len(errs) > 0 {
+				errsLock.RUnlock()
+				return
+			}
+			errsLock.RUnlock()
+
+			c.logger.Debug("deleting digest",
+				"repo", repo,
+				"digest", imageToDelete.Digest)
+
+			if !dryRun {
+				if err := c.deleteOne(ctx, ref); err != nil {
+					cause := errors.Unwrap(err).Error()
+
+					errsLock.Lock()
+					if _, ok := errs[cause]; !ok {
+						errs[cause] = err
+						errsLock.Unlock()
+						return
+					}
+					errsLock.Unlock()
+				}
+			}
+
+			deletedLock.Lock()
+			deleted = append(deleted, digest)
+			deletedLock.Unlock()
+		})
 	}
+
+	// Wait for everything to finish
+	pool.StopWait()
+
+	// Aggregate any errors
+	if len(errs) > 0 {
+		var errStrings []string
+		for _, v := range errs {
+			errStrings = append(errStrings, v.Error())
+		}
+
+		if len(errStrings) == 1 {
+			return nil, fmt.Errorf(errStrings[0])
+		}
+
+		return nil, fmt.Errorf("%d errors occurred: %s",
+			len(errStrings), strings.Join(errStrings, ", "))
+	}
+
+	sort.Strings(deleted)
+
+	return deleted, nil
 }
 
 func (gcrcleaner *GCRCleaner) Clean(ctx context.Context) {
@@ -197,6 +266,8 @@ func (gcrcleaner *GCRCleaner) Clean(ctx context.Context) {
 	clusterImages := gcrcleaner.GetKubernetesImages(ctx)
 
 	// imagesToDelete := []string{}
+	imagesToDelete := []*manifestStruct{}
+
 	for _, repo := range repos {
 		if strings.Contains(repo, gcrcleaner.Config.CleanerConf.PROJECT_ID) {
 			gcrrepo, err := gcr.NewRepository(gcrcleaner.Config.CleanerConf.REGISTRY + "/" + repo)
@@ -214,7 +285,7 @@ func (gcrcleaner *GCRCleaner) Clean(ctx context.Context) {
 
 				to_delete := gcrcleaner.shouldDelete(digest, manifest, repo, since, tagFilter, imageFilter, clusterImages)
 				if to_delete {
-
+					imagesToDelete = append(imagesToDelete, &manifestStruct(repo, digest, manifest))
 				}
 
 			}
