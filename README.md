@@ -20,7 +20,7 @@ The tool then lists all the images marked for deletion and prompts the user befo
 | OMIT_TAGS_REGEX         | Images with tags matching this Regex string will not be deleted | No |
 
 #### Example
-The environment variables are declared in an ............
+The environment variables are declared in an .env file
 REGISTRY=gcr.io  
 PROJECT_ID=project_id  
 AGE_DAYS=14  
@@ -29,3 +29,26 @@ OMIT_IMAGES_REGEX=(image_name|image_sha)
 OMIT_TAGS_REGEX=(latest|prod)  
 
 A sample.env file is provided in the root folder to be used as a template for the environment variables.
+
+### To run using GO
+
+bash .env
+```markdown
+    go run cmd/main.go
+
+```
+
+### To run using docker 
+
+building the image 
+
+```
+docker build -t gcr-cleaner:$(date +%m-%d-%Y) .
+```
+
+running the image
+```
+docker run -v ~/.config/gcloud:/root/.config/gcloud -v ~/.kube/config:/root/.kube/config   --env-file .env gcr-cleaner:$(date +%m-%d-%Y)
+
+```
+where ~/.kube/config file ```cmd-path``` has been set to the gcloud path in the docker container ``` /usr/local/gcloud/google-cloud-sdk/bin/gcloud```
