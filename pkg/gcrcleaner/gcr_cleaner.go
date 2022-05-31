@@ -43,16 +43,20 @@ type manifestStruct struct {
 
 // ensures required env variables are set and adds auth
 func (gcrcleaner *GCRCleaner) InitializeConfig() {
+
+	gcrcleaner.log = logrus.New()
+	gcrcleaner.log.SetLevel(logrus.InfoLevel)
+	gcrcleaner.log.SetOutput(os.Stdout)
+
 	gcrcleaner.Config = config.AppConfig()
 	auth, err := google.NewEnvAuthenticator()
+
 	if err != nil {
 		gcrcleaner.log.Fatalf("ERROR: %s", err)
 	}
 	gcrcleaner.concurrency = 3
 	gcrcleaner.Auth = auth
-	gcrcleaner.log = logrus.New()
-	gcrcleaner.log.SetLevel(logrus.InfoLevel)
-	gcrcleaner.log.SetOutput(os.Stdout)
+
 }
 
 func (gcrcleaner *GCRCleaner) GetKubernetesImages(ctx context.Context) []string {
@@ -107,7 +111,7 @@ func (gcrcleaner *GCRCleaner) shouldDelete(m *manifestStruct, since time.Time, t
 		image_name_with_tag := gcrcleaner.Config.CleanerConf.REGISTRY + "/" + m.Repo + ":" + tag
 
 		if tagFilter.MatchString(tag) {
-			gcrcleaner.log.Debug("should not delete",
+			gcrcleaner.log.Debug("should not delete ",
 				"imagename", image_name_with_tag,
 				"digest", m.Digest,
 				"reason", "matches tag filter",
@@ -117,7 +121,7 @@ func (gcrcleaner *GCRCleaner) shouldDelete(m *manifestStruct, since time.Time, t
 		}
 
 		if imageFilter.MatchString(image_name_with_tag) {
-			gcrcleaner.log.Debug("should not delete",
+			gcrcleaner.log.Debug("should not delete ",
 				"imagename", image_name_with_tag,
 				"digest", m.Digest,
 				"reason", "matches images filter",
@@ -127,7 +131,7 @@ func (gcrcleaner *GCRCleaner) shouldDelete(m *manifestStruct, since time.Time, t
 		}
 
 		if stringInSlice(image_name_with_tag, clusterImages) {
-			gcrcleaner.log.Debug("should not delete",
+			gcrcleaner.log.Debug("should not delete ",
 				"imagename", image_name_with_tag,
 				"digest", m.Digest,
 				"reason", "image in use in clusters",
@@ -140,10 +144,10 @@ func (gcrcleaner *GCRCleaner) shouldDelete(m *manifestStruct, since time.Time, t
 	// cater for images filter that do not have tags
 	image_name_with_digest := gcrcleaner.Config.CleanerConf.REGISTRY + "/" + m.Repo + "@" + m.Digest
 	if imageFilter.MatchString(image_name_with_digest) {
-		gcrcleaner.log.Debug("should not delete",
+		gcrcleaner.log.Debug("should not delete ",
 			"imagename", image_name_with_digest,
 			"digest", m.Digest,
-			"reason", "matches images filter",
+			"reason", "matches images filter ",
 		)
 		return false
 
@@ -151,7 +155,7 @@ func (gcrcleaner *GCRCleaner) shouldDelete(m *manifestStruct, since time.Time, t
 	// repo refers to
 
 	// If we got this far, it'ts not a viable deletion candidate.
-	gcrcleaner.log.Debug("should delete",
+	gcrcleaner.log.Debug("should delete ",
 		"repo", m.Repo,
 		"digest", m.Digest,
 		"reason", "no filter matches")
