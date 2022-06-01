@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+
 	"github.com/joeshaw/envdecode"
 )
 
@@ -15,7 +16,7 @@ type cleanerConf struct {
 	KUBERNETES_CONTEXTS string `env:"KUBERNETES_CONTEXTS,required"`
 	OMIT_IMAGES_REGEX   string `env:"OMIT_IMAGES_REGEX"`
 	OMIT_TAGS_REGEX     string `env:"OMIT_TAGS_REGEX"`
-	AGE_DAYS            string `env:"AGE_DAYS",required`
+	AGE_DAYS            string `env:"AGE_DAYS,required"`
 }
 
 func AppConfig() *Conf {

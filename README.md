@@ -31,8 +31,12 @@ OMIT_TAGS_REGEX=(latest|prod)
 A sample.env file is provided in the root folder to be used as a template for the environment variables.
 
 ### To run using GO
+```markdown
+    set -o allexport
+    source .env
+    set +o allexport
+```
 
-bash .env
 ```markdown
     go run cmd/main.go
 
