@@ -319,7 +319,7 @@ func (gcrcleaner *GCRCleaner) Clean(ctx context.Context) {
 				for _, manifest := range repoManifests {
 					to_delete := gcrcleaner.shouldDelete(manifest, since, tagFilter, imageFilter, clusterImages)
 					if to_delete {
-						gcrcleaner.log.Info(gcrcleaner.Config.CleanerConf.REGISTRY + "/" + repo + "@" + manifest.Digest + " with tags " + strings.Join(manifest.Info.Tags, ",") + " uploaded at " + manifest.Info.Uploaded.String())
+						gcrcleaner.log.Info("uploaded time: " + manifest.Info.Uploaded.String() + " image: " + gcrcleaner.Config.CleanerConf.REGISTRY + "/" + repo + "@" + manifest.Digest + " with tags " + strings.Join(manifest.Info.Tags, ","))
 						imagesToDelete = append(imagesToDelete, &manifestStruct{repo, manifest.Digest, manifest.Info})
 					}
 				}
