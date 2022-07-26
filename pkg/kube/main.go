@@ -1,16 +1,14 @@
-package gcrcleaner
+package kube
 
 import (
 	"flag"
-	"path/filepath"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"path/filepath"
 )
 
-func (gcrcleaner *GCRCleaner) GetKubeConfig() {
+func GetKubeConfig() string {
 
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
@@ -19,11 +17,11 @@ func (gcrcleaner *GCRCleaner) GetKubeConfig() {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
 	flag.Parse()
-	gcrcleaner.KubeConfig = *kubeconfig
+	return *kubeconfig
 
 }
 
-func buildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {
+func BuildConfigFromFlags(context, kubeconfigPath string) (*rest.Config, error) {
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath},
 		&clientcmd.ConfigOverrides{
