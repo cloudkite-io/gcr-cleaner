@@ -1,0 +1,10 @@
+registries:
+  - name: "" # e.g. gcr or ecr
+    registry_host: "" # e.g. gcr.io
+    organization: ""
+    project_id: ""
+    omit_images_regex: ""
+    omit_tags_regex: ""
+    age_days: 180
+    kubernetes_contexts:
+      - ""
